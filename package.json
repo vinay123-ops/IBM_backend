@@ -1,26 +1,18 @@
 {
-  "name": "ruff",
+  "name": "tomtom-backend",
   "version": "1.0.0",
-  "main": "test.js",
+  "description": "Node.js backend server for TomTom APIs with Swagger documentation",
+  "main": "server.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.3",
-    "axios": "^1.11.0",
-    "express": "^5.1.0",
-    "lru-cache": "^11.1.0",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1",
-    "yamljs": "^0.3.0",
-    "zod": "^3.25.76"
+    "express": "^4.18.2",
+    "axios": "^1.6.7",
+    "swagger-ui-express": "^5.0.0",
+    "yamljs": "^0.3.0"
   },
-  "devDependencies": {
-    "ngrok": "^5.0.0-beta.2"
-  }
+  "author": "",
+  "license": "ISC"
 }
