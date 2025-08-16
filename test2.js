@@ -1,15 +1,8 @@
 import express from 'express';
 import axios from 'axios';
 import dotenv from 'dotenv';
-import swaggerUi from 'swagger-ui-express';
-import yamljs from 'yamljs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -17,10 +10,6 @@ const API_KEY = process.env.TOMTOM_API_KEY;
 const BASE_URL = 'https://api.tomtom.com';
 
 app.use(express.json());
-
-// Swagger setup
-const swaggerDocument = yamljs.load(path.join(__dirname, 'swagger.yaml'));
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Validate position format (lat,lon)
 const validatePosition = (position) => {
