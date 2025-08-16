@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8080;
 const API_KEY = process.env.TOMTOM_API_KEY;
 const BASE_URL = 'https://api.tomtom.com';
 
@@ -188,3 +188,4 @@ app.use((err, req, res, next) => {
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
+
