@@ -1,120 +1,156 @@
-import express from 'express';
-import axios from 'axios';
-import swaggerUi from 'swagger-ui-express';
-import YAML from 'yamljs';
-import ngrok from 'ngrok';
+const express = require('express');
+const axios = require('axios');
 
 const app = express();
-const PORT = process.env.PORT || 4000;
-
-const TOMTOM_API_KEY = 'XU7ywpBTzrvpxOPrwgzm7fthzPXL2REz';
-const TOMTOM_BASE = 'https://api.tomtom.com';
+const port = 3000;
+const API_KEY = 'XU7ywpBTzrvpxOPrwgzm7fthzPXL2REz';
+const BASE_URL = 'https://api.tomtom.com';
 
 app.use(express.json());
 
-// Load OpenAPI spec
-const swaggerDocument = YAML.load('./openapi.yaml');
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// Middleware to handle errors
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
 
-// Utility to build TomTom URL
-function buildUrl(path, queryParams = {}) {
-  const url = new URL(TOMTOM_BASE + path);
-  url.searchParams.append('key', TOMTOM_API_KEY);
-  for (const [k, v] of Object.entries(queryParams)) {
-    if (v !== undefined) url.searchParams.append(k, v);
-  }
-  return url.toString();
-}
-
-// ----------- Endpoints ------------
-
-async function proxyRequest(url, res, isImage = false) {
+// Geocode API
+app.get('/search/geocode/:query', async (req, res) => {
   try {
-    const response = await axios.get(url, { responseType: isImage ? 'arraybuffer' : 'json' });
-    if (isImage) {
-      res.contentType('image/png');
-      res.send(response.data);
-    } else {
-      res.json(response.data);
-    }
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-}
-
-// 1️⃣ Geocode
-app.get('/geocode', (req, res) => {
-  const { query, limit, countrySet, language } = req.query;
-  const url = buildUrl(`/search/2/geocode/${encodeURIComponent(query)}.json`, { limit, countrySet, language });
-  proxyRequest(url, res);
-});
-
-// 2️⃣ Reverse Geocode
-app.get('/reverseGeocode', (req, res) => {
-  const { position, language } = req.query;
-  const url = buildUrl(`/search/2/reverseGeocode/${position}.json`, { language });
-  proxyRequest(url, res);
-});
-
-// 3️⃣ Fuzzy Search
-app.get('/fuzzySearch', (req, res) => {
-  const { query, limit, language } = req.query;
-  const url = buildUrl(`/search/2/search/${encodeURIComponent(query)}.json`, { limit, language });
-  proxyRequest(url, res);
-});
-
-// 4️⃣ POI Search
-app.get('/poiSearch', (req, res) => {
-  const { query, limit, lat, lon, radius } = req.query;
-  const url = buildUrl(`/search/2/poiSearch/${encodeURIComponent(query)}.json`, { limit, lat, lon, radius });
-  proxyRequest(url, res);
-});
-
-// 5️⃣ Nearby Search
-app.get('/nearbySearch', (req, res) => {
-  const { lat, lon, radius, limit } = req.query;
-  const url = buildUrl(`/search/2/nearbySearch/.json`, { lat, lon, radius, limit });
-  proxyRequest(url, res);
-});
-
-// 6️⃣ Calculate Route
-app.get('/calculateRoute', (req, res) => {
-  const { routePlanningLocations, contentType, language } = req.query;
-  const url = buildUrl(`/routing/1/calculateRoute/${routePlanningLocations}/${contentType}`, { language });
-  proxyRequest(url, res);
-});
-
-// 7️⃣ Reachable Range
-app.get('/reachableRange', (req, res) => {
-  const { origin, contentType } = req.query;
-  const url = buildUrl(`/routing/1/calculateReachableRange/${origin}/${contentType}`, req.query);
-  proxyRequest(url, res);
-});
-
-// 8️⃣ Traffic Incidents
-app.get('/trafficIncidents', (req, res) => {
-  const url = buildUrl(`/traffic/services/1/incidentDetails`, req.query);
-  proxyRequest(url, res);
-});
-
-// 9️⃣ Static Map
-app.get('/staticMap', (req, res) => {
-  const url = buildUrl(`/map/1/staticimage`, req.query);
-  proxyRequest(url, res, true);
-});
-
-// ------------- Start server + ngrok -------------
-app.listen(PORT, async () => {
-  console.log(`TomTom backend running on port ${PORT}`);
-
-  try {
-    const url = await ngrok.connect({
-      addr: PORT,
-      authtoken: process.env.NGROK_AUTHTOKEN, // optional
+    const response = await axios.get(`${BASE_URL}/search/2/geocode/${encodeURIComponent(req.params.query)}.json`, {
+      params: {
+        key: API_KEY,
+        ...req.query  // Pass all optional query parameters like storeResult, typeahead, limit, etc.
+      }
     });
-    console.log(`ngrok public URL: ${url}`);
-    console.log(`Swagger UI: ${url}/api-docs`);
-  } catch (err) {
-    console.error('Error starting ngrok:', err);
+    res.json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json({ error: error.message });
   }
+});
+
+// Reverse Geocode API
+app.get('/search/reverse-geocode/:position', async (req, res) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/search/2/reverseGeocode/${req.params.position}.json`, {
+      params: {
+        key: API_KEY,
+        ...req.query  // returnSpeedLimit, heading, radius, etc.
+      }
+    });
+    res.json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json({ error: error.message });
+  }
+});
+
+// Fuzzy Search API
+app.get('/search/fuzzy-search/:query', async (req, res) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/search/2/search/${encodeURIComponent(req.params.query)}.json`, {
+      params: {
+        key: API_KEY,
+        ...req.query  // typeahead, limit, ofs, etc.
+      }
+    });
+    res.json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json({ error: error.message });
+  }
+});
+
+// POI Search API
+app.get('/search/poi-search/:query', async (req, res) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/search/2/poiSearch/${encodeURIComponent(req.params.query)}.json`, {
+      params: {
+        key: API_KEY,
+        ...req.query  // typeahead, limit, ofs, countrySet, etc.
+      }
+    });
+    res.json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json({ error: error.message });
+  }
+});
+
+// Nearby Search API
+app.get('/search/nearby-search', async (req, res) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/search/2/nearbySearch/.json`, {
+      params: {
+        key: API_KEY,
+        ...req.query  // lat, lon, radius, limit, etc.
+      }
+    });
+    res.json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json({ error: error.message });
+  }
+});
+
+// Calculate Route API (handles both basic and waypoint routing as the endpoint is the same)
+app.get('/routing/calculate-route/:routePlanningLocations', async (req, res) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/routing/1/calculateRoute/${req.params.routePlanningLocations}/json`, {
+      params: {
+        key: API_KEY,
+        ...req.query  // maxAlternatives, alternativeType, etc.
+      }
+    });
+    res.json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json({ error: error.message });
+  }
+});
+
+// Calculate Reachable Range API
+app.get('/routing/calculate-reachable-range/:origin', async (req, res) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/routing/1/calculateReachableRange/${req.params.origin}/json`, {
+      params: {
+        key: API_KEY,
+        ...req.query  // fuelBudgetInLiters, energyBudgetInkWh, etc.
+      }
+    });
+    res.json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json({ error: error.message });
+  }
+});
+
+// Traffic Incident Details API
+app.get('/traffic/incident-details', async (req, res) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/traffic/services/5/incidentDetails`, {
+      params: {
+        key: API_KEY,
+        ...req.query  // bbox, fields, language, etc.
+      }
+    });
+    res.json(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json({ error: error.message });
+  }
+});
+
+// Static Map Image API
+app.get('/map/static-image', async (req, res) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/map/1/staticimage`, {
+      params: {
+        key: API_KEY,
+        ...req.query  // center, bbox, zoom, width, height, etc.
+      },
+      responseType: 'arraybuffer'  // Since it's an image, handle as binary
+    });
+    res.set('Content-Type', 'image/png');  // Assuming PNG, adjust based on format param
+    res.send(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).json({ error: error.message });
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
 });
