@@ -5,7 +5,7 @@
   "main": "test2.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node test2.js"
   },
   "dependencies": {
     "express": "^4.18.2",
