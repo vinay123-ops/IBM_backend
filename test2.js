@@ -1,7 +1,7 @@
-const express = require('express');
-const axios = require('axios');
-
-const app = express();
+import express from 'express';
+import axios from 'axios';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
 const port = 3000;
 const API_KEY = 'XU7ywpBTzrvpxOPrwgzm7fthzPXL2REz';
 const BASE_URL = 'https://api.tomtom.com';
@@ -154,3 +154,4 @@ app.get('/map/static-image', async (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
+
