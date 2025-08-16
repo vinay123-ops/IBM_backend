@@ -2,7 +2,7 @@
   "name": "tomtom-backend",
   "version": "1.0.0",
   "description": "Node.js backend server for TomTom APIs with Swagger documentation",
-  "main": "server.js",
+  "main": "test2.js",
   "type": "module",
   "scripts": {
     "start": "node server.js"
